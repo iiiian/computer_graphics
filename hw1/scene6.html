@@ -29,22 +29,43 @@ void main() {
       vec3 color = vec3(.5 + .5 * sin(fi),
                         .5 + .5 * sin(4.*fi),
                         .5 + .5 * sin(5.*fi));
-      float vx = vPos.x;
-      float vy = vPos.y;
-      //vx += .2 * sin(5. * vy + 3. * uTime);
-      //vy += .2 * sin(5. * vx + 1. * uTime);
-      float x = 8. * vx + 4. * sin(11.8 * fi + 100.3 + .3 * uTime);
-      float y = 8. * vy + 4. * sin(10.3 * fi + 200.6 + .3 * uTime);
-      float z = 8. * vy + 4. * cos(10.3 * fi + 200.6 + .3 * uTime);
-      float rr = 1. - x*x - y*y;
-      z += rr / (8.*8.);
-      if (rr > 0. && z > zMax) {
-         zMax = z;
-         float z = sqrt(rr);
-         float D1 = dot(vec3(x,y,z),L1);
-         float D2 = dot(vec3(x,y,z),L2);
-	 D1 = .4 * max(0., D1 * abs(D1));
-	 D2 = .4 * max(0., D2 * abs(D2));
+
+      // Instead of balls cycling in the square, create a blast effect
+      // Period to reset all balls
+      float PERIOD = 8.0;
+      // Create 2 pseudo random varialbe in [0, 1] via sin function
+      float h1 = fract(sin(fi * 12.9898 + 78.233) * 43758.5453123);
+      float h2 = fract(sin(fi *  4.1234 + 45.230) * 24634.6345123);
+      // Generate random direction and speed
+      float ang = 6.2831853 * h1;
+      float speed = mix(0.35, 0.85, h2);
+
+      // The ball shoots out from the center
+      float t = mod(uTime, PERIOD);
+      vec2 center = t * speed * vec2(cos(ang), sin(ang));
+      vec2 pos = 3.0 * vec2(vPos.x, vPos.y);
+      vec2 q = pos - center;
+
+      // Make the edge of the ball wavy~
+      // Adding multiple sin func with different freqency.
+      float r  = length(q);
+      float th = atan(q.y, q.x);
+      float R  = 0.35;
+      R += 0.06 * sin( 8.0 * th + 2.0 * uTime + 0.10 * fi);
+      R += 0.04 * sin(13.0 * th - 1.3 * uTime + 0.17 * fi + 1.0);
+      R += 0.03 * sin(21.0 * th + 0.7 * uTime + 0.31 * fi + 2.0);
+
+      float rr = R * R - r * r;
+      float depth = -length(center) + 0.02 * rr;
+
+      if (rr > 0. && depth > zMax) {
+         zMax = depth;
+         float zSurf = sqrt(max(0., rr));
+         vec3 N = normalize(vec3(q.x, q.y, zSurf));
+         float D1 = dot(N, L1);
+         float D2 = dot(N, L2);
+         D1 = .4 * max(0., D1 * abs(D1));
+         D2 = .4 * max(0., D2 * abs(D2));
          vec3 diffuse = D1 * vec3(.2,.5,1.) +
                         D2 * vec3(.2,.5,1.) ;
          fragColor = vec4(sqrt(color * (ambient + diffuse)), 1.);
