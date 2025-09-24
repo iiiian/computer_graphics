@@ -16,19 +16,10 @@ You can also use the surface normal to add
 
 function Scene() {
 
-let NS = 3;
-let NL = 3;
-
 this.vertexShaderUrl = 'shaders/fullscreen.vert';
 this.fragmentShaderUrl = 'shaders/scene8.frag';
-this.fragmentShaderReplacements = { NS, NL };
 
 let startTime = Date.now()/1000;
-
-let normalize = v => {
-   let s = Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
-   return [ v[0]/s, v[1]/s, v[2]/s ];
-}
 
 this.update = viewPoint => {
    let time = Date.now()/1000 - startTime;
@@ -38,22 +29,8 @@ this.update = viewPoint => {
    let s = Math.sin(time);
    let c = Math.cos(time);
 
-   setUniform('4fv', 'uS', [ -.3*s,0,0,.4,
-                              .3*s,0,.3,.4,
-                              .7*c,.7*s,0,.2 ]);
-
-   setUniform('3fv', 'uC', [ 1,.5,.5,
-                             .5,.7,1,
-                             .5,1,.5 ]);
-
-   setUniform('3fv', 'uL', [ normalize([1,1,1]),
-                             normalize([-1,-1,-.5]),
-                             normalize([0,-1,0])
-			   ].flat());
-
-   setUniform('3fv', 'uLC', [ .5,.7,1,
-                              .2,.15,.1,
-			      .5,0,0 ]);
+   setUniform('4fv', 'uS', [ 0.0, 0.0, 0.0, 0.7]);
+   setUniform('3fv', 'uC', [ 1.0, 0.5, 0.5 ]);
 }
 
 }

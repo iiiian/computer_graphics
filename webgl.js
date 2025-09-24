@@ -67,9 +67,10 @@ function gl_start(canvas, scene) {
         replacements: scene.fragmentShaderReplacements
       });
       canvas.setShaders(vertexShaderSource, fragmentShaderSource);
+      const defaultViewPoint = new Float32Array([0, 0, 7]);
       setInterval(function() {
         if (scene.update)
-          scene.update([0, 0, 7]);
+          scene.update(defaultViewPoint);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
       }, 30);
     }

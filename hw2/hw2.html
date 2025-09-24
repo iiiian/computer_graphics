@@ -1,0 +1,22 @@
+<body bgcolor=black>
+<center><canvas id=canvas width=800 height=800></canvas>
+<script src=webgl.js></script>
+<script>
+
+function Scene() {
+
+this.vertexShaderUrl = 'shaders/fullscreen.vert';
+this.fragmentShaderUrl = 'shaders/hw2.frag';
+
+let startTime = Date.now()/1000;
+
+this.update = viewPoint => {
+   let time = Date.now() / 1000 - startTime;
+   setUniform('1f', 'uTime', time);
+   setUniform('3fv', 'uViewPoint', viewPoint);
+}
+
+}
+
+gl_start(canvas, new Scene());
+</script>
