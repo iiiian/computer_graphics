@@ -1,5 +1,34 @@
+const shaderCache = new Map();
+
+function applyReplacements(source, replacements) {
+   if (! replacements)
+      return source;
+   let result = source;
+   for (const [key, value] of Object.entries(replacements)) {
+      const token = new RegExp('\\{\\{' + key + '\\}}', 'g');
+      result = result.replace(token, String(value));
+   }
+   return result;
+}
+
+async function getShaderSource({ inlineSource, url, label, replacements }) {
+   if (inlineSource)
+      return applyReplacements(inlineSource, replacements);
+   if (! url)
+      throw new Error('Missing ' + label + ' source');
+   let base = shaderCache.get(url);
+   if (! base) {
+      const response = await fetch(url);
+      if (! response.ok)
+         throw new Error('Failed to load ' + label + ' from ' + url + ': ' + response.status);
+      base = await response.text();
+      shaderCache.set(url, base);
+   }
+   return applyReplacements(base, replacements);
+}
+
 function gl_start(canvas, scene) {
-   setTimeout(function() {
+   setTimeout(async function() {
       gl = canvas.getContext('webgl2');
       canvas.setShaders = function(vertexShader, fragmentShader) {
 	 gl.program = gl.createProgram();
@@ -24,12 +53,29 @@ function gl_start(canvas, scene) {
          gl.enableVertexAttribArray(aPos);
          gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
       }
-      canvas.setShaders(scene.vertexShader, scene.fragmentShader);
-      setInterval(function() {
-         if (scene.update)
-	    scene.update([0,0,7]);
-         gl.drawArrays(gl.TRIANGLES, 0, 6);
-      }, 30);
+      try {
+         const vertexShaderSource = await getShaderSource({
+            inlineSource: scene.vertexShader,
+            url: scene.vertexShaderUrl,
+            label: 'vertex shader',
+            replacements: scene.vertexShaderReplacements
+         });
+         const fragmentShaderSource = await getShaderSource({
+            inlineSource: scene.fragmentShader,
+            url: scene.fragmentShaderUrl,
+            label: 'fragment shader',
+            replacements: scene.fragmentShaderReplacements
+         });
+         canvas.setShaders(vertexShaderSource, fragmentShaderSource);
+         setInterval(function() {
+            if (scene.update)
+	       scene.update([0,0,7]);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+         }, 30);
+      }
+      catch (err) {
+         console.error('Shader initialization failed:', err);
+      }
    }, 100);
 }
 let gl;
